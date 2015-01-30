@@ -82,10 +82,12 @@ class HipChatPlugin extends MantisPlugin {
         $url = string_get_bug_view_url_with_fqdn($bug_id);
         $summary = HipChatPlugin::clean_summary(bug_format_summary($bug_id, SUMMARY_FIELD));
         $reporter = '@' . user_get_name(auth_get_current_user_id());
-        $msg = sprintf(plugin_lang_get($event === 'EVENT_REPORT_BUG' ? 'bug_created' : 'bug_updated'), 
-            $project, $reporter, $summary, $url
-        );
-        $this->notify($msg, $this->get_room($project));
+        if ($event === 'EVENT_REPORT_BUG') {
+            $msg = "New issue <a href='$url'>$project $summary</a>";
+        } else {
+            $msg = "Issue <a href='$url'>$project $summary</a> (" . get_enum_element( 'status', $bug->status ) . ") is updated";
+        }
+        $this->notify($msg, $this->get_room($project), $event === 'EVENT_REPORT_BUG' ? 'create' : get_enum_element( 'status', $bug->status ));
     }
 
     function bug_action($event, $action, $bug_id) {
@@ -100,8 +102,8 @@ class HipChatPlugin extends MantisPlugin {
         $project = project_get_name($bug->project_id);
         $reporter = '@' . user_get_name(auth_get_current_user_id());
         $summary = HipChatPlugin::clean_summary(bug_format_summary($bug_id, SUMMARY_FIELD));
-        $msg = sprintf(plugin_lang_get('bug_deleted'), $project, $reporter, $summary);
-        $this->notify($msg, $this->get_room($project));
+        $msg = "Issue deleted: $project $summary ";
+        $this->notify($msg, $this->get_room($project), 'delete');
     }
 
     function bugnote_add_edit($event, $bug_id, $bugnote_id) {
@@ -111,10 +113,13 @@ class HipChatPlugin extends MantisPlugin {
         $summary = HipChatPlugin::clean_summary(bug_format_summary($bug_id, SUMMARY_FIELD));
         $reporter = '@' . user_get_name(auth_get_current_user_id());
         $note = bugnote_get_text($bugnote_id);
-        $msg = sprintf(plugin_lang_get($event === 'EVENT_BUGNOTE_ADD' ? 'bugnote_created' : 'bugnote_updated'), 
-            $project, $reporter, $summary, $url, $note
-        );
-        $this->notify($msg, $this->get_room($project));
+
+        if ($event === 'EVENT_BUGNOTE_ADD') {
+            $msg = "A note has been added to <a href='$url'>$project $summary</a>";
+        } else {
+            $msg = "A note in <a href='$url'>$project $summary</a> is updated";
+        }
+        $this->notify($msg, $this->get_room($project), 'note_create');
     }
 
     function bugnote_deleted($event, $bug_id, $bugnote_id) {
@@ -123,8 +128,8 @@ class HipChatPlugin extends MantisPlugin {
         $url = string_get_bug_view_url_with_fqdn($bug_id);
         $summary = HipChatPlugin::clean_summary(bug_format_summary($bug_id, SUMMARY_FIELD));
         $reporter = '@' . user_get_name(auth_get_current_user_id());
-        $msg = sprintf(plugin_lang_get('bugnote_deleted'), $project, $reporter, $summary, $url);
-        $this->notify($msg, $this->get_room($project));
+        $msg = "A note in <a href='$url'>$project $summary</a> has been removed";
+        $this->notify($msg, $this->get_room($project), 'note_delete');
     }
 
     static function clean_summary($summary) {
@@ -185,7 +190,30 @@ class HipChatPlugin extends MantisPlugin {
         return isset($rooms[$project]) ? $rooms[$project] : plugin_config_get('default_room');
     }
 
-    function notify($msg, $room) {
+    function notify($msg, $room, $action) {
+        $color = plugin_config_get('color');
+
+        switch($action) {
+            case 'create': $color = 'yellow'; break;
+            case 'update': $color = 'yellow'; break;
+            case 'delete': $color = 'red'; break;
+
+            case 'note_create': $color = 'gray'; break;
+            case 'note_delete': $color = 'red'; break;
+
+            case 'nieuw': $color = 'yellow'; break;
+            case 'feedback': $color = 'red'; break;
+            case 'erkend': $color = 'gray'; break;
+            case 'bevestigd': $color = 'gray'; break;
+            case 'toegewezen': $color = 'gray'; break;
+            case 'klaar voor uitrol': $color = 'green'; break;
+            case 'testbaar': $color = 'purple'; break;
+            case 'afgemeld': $color = 'green'; break;
+            case 'afgesloten': $color = 'green'; break;
+        }
+
+        // $msg = $msg . "( action: $action )";
+
         $ch = curl_init();
         // @see https://www.hipchat.com/docs/api/method/rooms/message
         $url = sprintf('https://api.hipchat.com/v1/rooms/message?auth_token=%s', plugin_config_get('token'));
@@ -196,9 +224,9 @@ class HipChatPlugin extends MantisPlugin {
             'room_id' => $room,
             'from' => plugin_config_get('bot_name'),
             'message' => $msg,
-            'message_format' => 'text',
+            'message_format' => 'html',
             'notify' => plugin_config_get('notify'),
-            'color' => plugin_config_get('color'),
+            'color' => $color,
             'format' => 'json',
         );
         curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
