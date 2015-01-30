@@ -83,9 +83,9 @@ class HipChatPlugin extends MantisPlugin {
         $summary = HipChatPlugin::clean_summary(bug_format_summary($bug_id, SUMMARY_FIELD));
         $reporter = '@' . user_get_name(auth_get_current_user_id());
         if ($event === 'EVENT_REPORT_BUG') {
-            $msg = "New issue <a href='$url'>" . ($this->has_specific_room($project) ? "" : "$project ") . "$summary</a>";
+            $msg = "New: <a href='$url'>" . ($this->has_specific_room($project) ? "" : "$project ") . "$summary</a>";
         } else {
-            $msg = "Issue <a href='$url'>" . ($this->has_specific_room($project) ? "" : "$project ") . "$summary</a> (" . get_enum_element( 'status', $bug->status ) . ") is updated";
+            $msg = "Updated: <a href='$url'>" . ($this->has_specific_room($project) ? "" : "$project ") . "$summary</a> (" . get_enum_element( 'status', $bug->status ) . ")";
         }
         $this->notify($msg, $this->get_room($project), $event === 'EVENT_REPORT_BUG' ? 'create' : get_enum_element( 'status', $bug->status ));
     }
@@ -102,7 +102,7 @@ class HipChatPlugin extends MantisPlugin {
         $project = project_get_name($bug->project_id);
         $reporter = '@' . user_get_name(auth_get_current_user_id());
         $summary = HipChatPlugin::clean_summary(bug_format_summary($bug_id, SUMMARY_FIELD));
-        $msg = "Issue deleted: " . ($this->has_specific_room($project) ? "" : "$project ") . "$summary ";
+        $msg = "Deleted: " . ($this->has_specific_room($project) ? "" : "$project ") . "$summary ";
         $this->notify($msg, $this->get_room($project), 'delete');
     }
 
@@ -115,9 +115,9 @@ class HipChatPlugin extends MantisPlugin {
         $note = bugnote_get_text($bugnote_id);
 
         if ($event === 'EVENT_BUGNOTE_ADD') {
-            $msg = "A note has been added to <a href='$url'>" . ($this->has_specific_room($project) ? "" : "$project ") . "$summary</a>";
+            $msg = "New note: <a href='$url'>" . ($this->has_specific_room($project) ? "" : "$project ") . "$summary</a>";
         } else {
-            $msg = "A note in <a href='$url'>" . ($this->has_specific_room($project) ? "" : "$project ") . "$summary</a> is updated";
+            $msg = "Updated note: <a href='$url'>" . ($this->has_specific_room($project) ? "" : "$project ") . "$summary</a>";
         }
         $this->notify($msg, $this->get_room($project), 'note_create');
     }
@@ -128,7 +128,7 @@ class HipChatPlugin extends MantisPlugin {
         $url = string_get_bug_view_url_with_fqdn($bug_id);
         $summary = HipChatPlugin::clean_summary(bug_format_summary($bug_id, SUMMARY_FIELD));
         $reporter = '@' . user_get_name(auth_get_current_user_id());
-        $msg = "A note in <a href='$url'>" . ($this->has_specific_room($project) ? "" : "$project ") . "$summary</a> has been removed";
+        $msg = "Deleted note: <a href='$url'>" . ($this->has_specific_room($project) ? "" : "$project ") . "$summary</a>";
         $this->notify($msg, $this->get_room($project), 'note_delete');
     }
 
