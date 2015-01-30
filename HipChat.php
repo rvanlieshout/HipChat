@@ -215,6 +215,16 @@ class HipChatPlugin extends MantisPlugin {
             case 'testbaar': $color = 'purple'; break;
             case 'afgemeld': $color = 'green'; break;
             case 'afgesloten': $color = 'green'; break;
+
+            case 'new': $color = 'yellow'; break;
+            case 'feedback': $color = 'red'; break;
+            case 'acknowledged': $color = 'gray'; break;
+            case 'confirmed': $color = 'gray'; break;
+            case 'assigned': $color = 'gray'; break;
+            case 'ready to deploy': $color = 'green'; break;
+            case 'to be tested': $color = 'purple'; break;
+            case 'resolved': $color = 'green'; break;
+            case 'closed': $color = 'green'; break;
         }
 
         // $msg = $msg . "( action: $action )";
