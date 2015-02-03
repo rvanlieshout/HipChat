@@ -202,6 +202,10 @@ class HipChatPlugin extends MantisPlugin {
     }
 
     function notify($msg, $room, $action) {
+        if ($room == 'none') {
+            return;
+        }
+
         $color = plugin_config_get('color');
 
         switch($action) {
